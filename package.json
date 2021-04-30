@@ -1,0 +1,22 @@
+{
+  "name": "imagescraper",
+  "version": "1.0.0",
+  "description": "Scrapes images from Wikipedia articles and delivers them in a JSON package.",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/rsandfield/imagescraper"
+  },
+  "keywords": [
+    "scraper",
+    "wikipedia",
+    "images"
+  ],
+  "author": "Robert Sandfield <sandlero@oregonstate.edu>",
+  "license": "ISC"
+}
