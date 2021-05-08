@@ -1,0 +1,25 @@
+<h1><%- title %></h1>
+<div id="primary">
+    <hr>
+    <h2>Image results for <%- title %>:</h2>
+    <hr>
+    <% if(images.primary.length == 0) { %>
+        <p>No images found for <%- title %></p>
+    <% } else { %>
+        <% images.primary.forEach(function(image) { %>
+            <p>Woah</p>
+        <% }); %> 
+    <% } %>
+</div>
+<div id="related">
+    <hr>
+    <h2>Image results for related articles:</h2>
+    <hr>
+    <% if(images.related.length == 0) { %>
+            <p>No images found for related articles</p>
+    <% } else { %>
+        <% images.related.forEach(function(image) { %>
+            <p>Woah</p>
+        <% }); %> 
+    <% } %>
+</div>
