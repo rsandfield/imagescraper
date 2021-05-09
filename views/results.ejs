@@ -1,5 +1,5 @@
 <h1><%- title %></h1>
-<div id="primary">
+<div id="primary" class="gallery">
     <hr>
     <h2>Image results for <%- title %>:</h2>
     <hr>
@@ -7,11 +7,13 @@
         <p>No images found for <%- title %></p>
     <% } else { %>
         <% images.primary.forEach(function(image) { %>
-            <p>Woah</p>
+            <div class="galleryimage">
+                <img src=<%- image %>></img>
+            </div>
         <% }); %> 
     <% } %>
 </div>
-<div id="related">
+<div id="related" class="gallery">
     <hr>
     <h2>Image results for related articles:</h2>
     <hr>

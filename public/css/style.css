@@ -14,6 +14,35 @@ body {
     padding: 0 4px;
 }
 
-img {
+div.articlesearch {
+    max-width: 500px;
+    margin: 50px auto;
+    text-align: center;
+    align-self: center;
+}
+
+div.articlesearch p {
+    text-align: left;
+}
+
+div.gallery {
+    clear: left;
+}
+
+div.galleryimage {
+    margin: 5px;
+    border: 1px solid white;
+    float: left;
+    height: 200px;
+}
+
+div.galleryimage:hover {
+    margin: 3px;
+    border: 3px solid white;
+}
+
+div.galleryimage img {
+    width: auto;
+    height: 100%;
     vertical-align: middle;
 }

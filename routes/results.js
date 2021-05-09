@@ -54,14 +54,31 @@ async function getImages(link, count = Infinity)
         )
         {
             let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
-            
             let $$ = await fetchHTML(imagePage);
-            let image = await axios.get("https:" + $$('#file')[0].children[0].attribs.href);
-            images.push(image);
+            images[i] = "https:" + $$('#file')[0].children[0].attribs.href;
+            /*
+            
+            await imagePageLinkToFile(imagePage).then((image) => {
+                images[i] = image;
+            });
+            */
         }
     }
 
     return images;
+}
+
+async function imagePageLinkToFile(url)
+{
+    /*
+    let $ = await fetchHTML(url);
+    let image = await axios.get("https:" + $('#file')[0].children[0].attribs.href);
+    image = image['data'];
+    let matches = image.match(/^data:.+\/(.+);base64,(.*)$/);
+    image = matches[2];
+    */
+    let buffer = new Buffer(url, 'base64');
+    return buffer;
 }
 
 router.get('/results', async function(req, res) {
@@ -83,6 +100,7 @@ router.get('/results', async function(req, res) {
     options.images.primary = await getImages(options.link);
 
     console.log(options.images.primary.length, options.images.related.length);
+    console.log(options.images.primary[0])
     res.render('results', options);
 });
 
