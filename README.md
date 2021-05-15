@@ -7,6 +7,9 @@ return results in two arrays of base64-formatted images named 'primary' and
 'related'.
 
 API:
+
 Route: '/apirequest'
+
 Request: 'primary' variable with article title or URL as value
+
 Respnse: stringified JSON named 'response' containing arrays of base64 formatted images named 'primary' and 'related'
