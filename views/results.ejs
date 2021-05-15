@@ -1,3 +1,5 @@
+<script src="/js/results.js"></script>
+
 <h1><%- title %></h1>
 <div id="primary" class="gallery">
     <hr>
@@ -6,9 +8,13 @@
     <% if(images.primary.length == 0) { %>
         <p>No images found for <%- title %></p>
     <% } else { %>
-        <% images.primary.forEach(function(image) { %>
+        <% images.primary.forEach(function(image, index) { %>
             <div class="galleryimage">
-                <img src=<%- image %>></img>
+                <img onclick="openModal('pmod<%- index %>')" src="data:image/png;base64, <%- image %>" />
+            </div>
+            <div id="pmod<%- index %>" class="gallerymodal">
+                <img src="data:image/png;base64, <%- image %>" />
+                <span onclick="hideModal('pmod<%- index %>')">x</span>
             </div>
         <% }); %> 
     <% } %>
@@ -21,7 +27,9 @@
             <p>No images found for related articles</p>
     <% } else { %>
         <% images.related.forEach(function(image) { %>
-            <p>Woah</p>
+            <div class="galleryimage">
+                <img src="data:image/png;base64, <%- image %>"></img>
+            </div>
         <% }); %> 
     <% } %>
 </div>

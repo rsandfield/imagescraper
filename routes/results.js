@@ -2,6 +2,8 @@ var express = require('express');
 var cheerio = require('cheerio');
 var axios = require("axios");
 var router = express.Router();
+var FileReader = require("filereader");
+var reader = new FileReader();
 
 /**
  * Converts Wikipedia title to article link
@@ -38,6 +40,7 @@ async function getImages(link, count = Infinity)
 
     images = [];
 
+    let j = 0;
     //Iterate through all links
     for(let i = 0; i < linkNodes.length; i++)
     {
@@ -55,52 +58,81 @@ async function getImages(link, count = Infinity)
         {
             let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
             let $$ = await fetchHTML(imagePage);
-            images[i] = "https:" + $$('#file')[0].children[0].attribs.href;
-            /*
-            
-            await imagePageLinkToFile(imagePage).then((image) => {
-                images[i] = image;
-            });
-            */
+            images[j++] = await getBase64("https:" + $$('#file')[0].children[0].attribs.href);
         }
     }
 
     return images;
 }
 
-async function imagePageLinkToFile(url)
-{
-    /*
-    let $ = await fetchHTML(url);
-    let image = await axios.get("https:" + $('#file')[0].children[0].attribs.href);
-    image = image['data'];
-    let matches = image.match(/^data:.+\/(.+);base64,(.*)$/);
-    image = matches[2];
-    */
-    let buffer = new Buffer(url, 'base64');
-    return buffer;
-}
+/*
+Function: getBase64
+-------------------
+https://stackoverflow.com/questions/41846669/download-an-image-using-axios-and-convert-it-to-base64
 
+*/
+function getBase64(url) {
+    return axios
+      .get(url, {
+        responseType: 'arraybuffer'
+      })
+      .then(response => Buffer.from(response.data, 'binary').toString('base64'))
+  }
+
+/*
+Route: apirequest
+-----------------
+Recieves a request to scrape images based off of a primary Wikipedia article,
+sends a request to Don's transformer for a list of related articles, scrapes
+all the articles for images, and sends a stringified JSON back as a response.
+*/
+router.get('/apirequest', async function(req, res) {
+    let primary = req.query['primary'];
+    //let related = !!Make request to tag transformer!!
+
+    let response = {'primary':[],'related':[]};
+
+    if(primary.lastIndexOf('/') == -1)
+    {
+        primary = titleToLink(options.title);
+    }
+
+    response.primary = await getImages(options.link);
+
+    res.send(JSON.stringify(response));
+});
+
+/*
+Route: results
+--------------
+Recieves a request to scrape images based off of a primary Wikipedia article,
+sends a request to Don's transformer for a list of related articles, scrapes
+all the articles for images, and renders a gallery of all images.
+*/
 router.get('/results', async function(req, res) {
+    //Set up the options object to be passed for rendering
     let options = {
         title: req.query['search'],
         description: "Scraped images",
         images: {'primary':[],'related':[]}
     };
     
+    //If the search term was a link, convert it to an article title and store
     if(options.title.lastIndexOf('/') == -1)
     {
         options.link = titleToLink(options.title);
     }
+    //If search term was a title, store it and replace the link variable with
+    //properly converted text
     else{
         options.link = options.title;
         options.title = linkToTitle(options.title);
     }
 
+    //Populate the primary images gallery
     options.images.primary = await getImages(options.link);
 
-    console.log(options.images.primary.length, options.images.related.length);
-    console.log(options.images.primary[0])
+    //And do that render magic
     res.render('results', options);
 });
 
