@@ -1,6 +1,9 @@
 {
   "name": "imagescraper",
   "version": "1.0.0",
+  "engines": {
+    "node": "16.x"
+  },
   "description": "Scrapes images from Wikipedia articles and delivers them in a JSON package.",
   "main": "index.js",
   "dependencies": {
