@@ -5,7 +5,7 @@ var path = require('path');
 
 var app = express();
 
-app.set('port', process.argv[2]);
+app.set('port', process.env.PORT || process.argv[2] || 5000);
 
 app.use(express.static(path.join(__dirname, '/public')));
 
