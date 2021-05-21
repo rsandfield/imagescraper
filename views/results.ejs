@@ -10,10 +10,10 @@
     <% } else { %>
         <% images.primary.forEach(function(image, index) { %>
             <div class="galleryimage">
-                <img onclick="openModal('pmod<%- index %>')" src="data:image/png;base64, <%- image %>" />
+                <img onclick="openModal('pmod<%- index %>')" src="<%- image %>" />
             </div>
             <div id="pmod<%- index %>" class="gallerymodal">
-                <img src="data:image/png;base64, <%- image %>" />
+                <img src="<%- image %>" />
                 <span onclick="hideModal('pmod<%- index %>')">x</span>
             </div>
         <% }); %> 
@@ -28,7 +28,7 @@
     <% } else { %>
         <% images.related.forEach(function(image) { %>
             <div class="galleryimage">
-                <img src="data:image/png;base64, <%- image %>"></img>
+                <img src="<%- image %>"></img>
             </div>
         <% }); %> 
     <% } %>
