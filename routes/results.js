@@ -55,13 +55,18 @@ async function getImagesFromPage(link, count = Infinity)
         let node = linkNodes[i];
         
         //Check that link node is a content image
-        if( $.contains(body, node) &&                                                   //Link is within body
-            node.attribs.class && node.attribs.class.localeCompare('image') == 0 &&     //Link contains image node
-            node.parent.attribs.class && (                                              //Parent node is of type only used for content
+        if
+        ( 
+            $.contains(body, node)                                                  //Link is within body
+            && node.attribs.class && node.attribs.class.localeCompare('image') == 0 //Link contains image node
+            //Parent node is of type only used for content
+            && node.parent.attribs.class
+            && (
                 node.parent.attribs.class.localeCompare('thumbinner') == 0 ||
                 node.parent.attribs.class.localeCompare('infobox-image') == 0
-            ) &&
-            node.attribs.href.substr(url.lastIndexOf(".") + 1).localeCompare("svg") != 0//Not an SVG
+            )
+            //Not an SVG
+            && node.attribs.href.substr(node.attribs.href.lastIndexOf(".") + 1).localeCompare("svg") != 0
         )
         { 
             let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
@@ -173,7 +178,7 @@ router.get('/apirequest', async function(req, res) {
         primary = titleToLink(primary);
     }
 
-    res.send(JSON.stringify(getImages(primary)));
+    res.send(JSON.stringify(await getImages(primary)));
 });
 
 /*
