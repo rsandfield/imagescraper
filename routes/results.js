@@ -120,7 +120,7 @@ async function getImages(primary)
     return axios.get("https://www.don-hurst.com/keyword")
         .then(async related => 
             {
-                related = JSON.parse(related.data).keyword_list;
+                related = JSON.parse(related.data).keywords;
                 let images = {};
     
                 images.primary = await Promise.all(await getImagesFromPage(primary));
