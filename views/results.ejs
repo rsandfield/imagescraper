@@ -26,7 +26,7 @@
     <% if(images.related.length == 0) { %>
             <p>No images found for related articles</p>
     <% } else { %>
-        <% images.related.forEach(function(image) { %>
+        <% images.related.forEach(function(image, index) { %>
             <div class="galleryimage">
                 <img onclick="openModal('rmod<%- index %>')" src="<%- image %>" />
             </div>
