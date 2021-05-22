@@ -28,7 +28,11 @@
     <% } else { %>
         <% images.related.forEach(function(image) { %>
             <div class="galleryimage">
-                <img src="<%- image %>"></img>
+                <img onclick="openModal('rmod<%- index %>')" src="<%- image %>" />
+            </div>
+            <div id="rmod<%- index %>" class="gallerymodal">
+                <img src="<%- image %>" />
+                <span onclick="hideModal('rmod<%- index %>')">x</span>
             </div>
         <% }); %> 
     <% } %>
