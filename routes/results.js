@@ -41,42 +41,49 @@ async function fetchHTML(url) {
 
 async function getImagesFromPage(link, count = Infinity)
 {
-    let $ = await fetchHTML(link);
-    let body = ($('#content')[0]);
-    let linkNodes = $('a');
+    return fetchHTML(link)
+        .then($ => {
+            // Get content block of page
+            let body = ($('#content')[0]);
+            // Get all link nodes from page
+            let linkNodes = $('a');
+            // Return array and index iterator
+            let images = [];
+            let j = 0;
+            //Iterate through all links
+            for(let i = 0; i < linkNodes.length; i++)
+            {
+                // Extract node object from cheeriojs function
+                let node = linkNodes[i];
+                
+                // Check that link node is a content image
+                if
+                ( 
+                    // Link node is within body
+                    $.contains(body, node)
+                    // Link node contains image node
+                    && node.attribs.class && node.attribs.class.localeCompare('image') == 0 
+                    // Parent node is of type only used for content
+                    && node.parent.attribs.class
+                    && (
+                        node.parent.attribs.class.localeCompare('thumbinner') == 0 ||
+                        node.parent.attribs.class.localeCompare('infobox-image') == 0
+                    )
+                    // Image is not an SVG
+                    && node.attribs.href.substr(node.attribs.href.lastIndexOf(".") + 1).localeCompare("svg") != 0
+                )
+                { 
+                    let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
+                    images[j++] = fetchHTML(imagePage)
+                        .then($$ => {
+                            return getBase64("https:" + $$('#file')[0].children[0].attribs.href)
+                        });
+                    if(j >= count) break;
+                }
+            }
 
-    images = [];
-
-    let j = 0;
-    //Iterate through all links
-    for(let i = 0; i < linkNodes.length; i++)
-    {
-        //Extract node object from cheeriojs function
-        let node = linkNodes[i];
-        
-        //Check that link node is a content image
-        if
-        ( 
-            $.contains(body, node)                                                  //Link is within body
-            && node.attribs.class && node.attribs.class.localeCompare('image') == 0 //Link contains image node
-            //Parent node is of type only used for content
-            && node.parent.attribs.class
-            && (
-                node.parent.attribs.class.localeCompare('thumbinner') == 0 ||
-                node.parent.attribs.class.localeCompare('infobox-image') == 0
-            )
-            //Not an SVG
-            && node.attribs.href.substr(node.attribs.href.lastIndexOf(".") + 1).localeCompare("svg") != 0
-        )
-        { 
-            let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
-            images[j++] = fetchHTML(imagePage).then($$ => {
-                return getBase64("https:" + $$('#file')[0].children[0].attribs.href)});
-            if(j >= count) break;
-        }
-    }
-
-    return images;
+            return images;
+        });
 }
 
 async function getKeywordImages(keywords, count = 10)
@@ -86,32 +93,14 @@ async function getKeywordImages(keywords, count = 10)
     let previous = "aaa";
     for(let i = 0; i < keywords.length; i++)
     {
-        /*
-        //Prevent dupicates
-        //Check returned article title
-        let title = titleToLink(keywords[i]);
-        let page = await fetchHTML(title).then($ => {
-        try
-        {
-            return ($('title')[0]).children[0].data;
-        }
-        catch(e)
-        {
-            return null;
-        }
-        });
-
-        //Check returned article title against previous successful read
-        if(!page || page.localeCompare(previous) == 0) continue;
-        previous = page;
-        */
         if(previous.substr(0, 3).localeCompare(keywords[i].substr(0, 3)) == 0) continue;
         previous = keywords[i];
-        let image = await getImagesFromPage(titleToLink(keywords[i]), 1);
-        if(image && image.length > 0) 
-        {
-        images[j++] = image[0];
-        }
+        let image = await getImagesFromPage(titleToLink(keywords[i]), 1)
+            .then(images => {
+                if(images && images.length > 0) return images[0];
+                return null;        
+            });
+        if(image) images[j++] = image;
         if(j >= count) break;
     }
 
@@ -155,7 +144,6 @@ function getBase64(url)
             }
         });
 }
-
 
 /*
 Route: apirequest
