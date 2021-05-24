@@ -83,31 +83,34 @@ async function getKeywordImages(keywords, count = 10)
 {
     let images = [];
     let j = 0;
-    let previous = null;
+    let previous = "aaa";
     for(let i = 0; i < keywords.length; i++)
     {
+        /*
         //Prevent dupicates
         //Check returned article title
         let title = titleToLink(keywords[i]);
         let page = await fetchHTML(title).then($ => {
-            try
-            {
-                return ($('title')[0]).children[0].data;
-            }
-            catch(e)
-            {
-                return null;
-            }
+        try
+        {
+            return ($('title')[0]).children[0].data;
+        }
+        catch(e)
+        {
+            return null;
+        }
         });
 
         //Check returned article title against previous successful read
         if(!page || page.localeCompare(previous) == 0) continue;
         previous = page;
-
+        */
+        if(previous.substr(0, 3).localeCompare(keywords[i].substr(0, 3)) == 0) continue;
+        previous = keywords[i];
         let image = await getImagesFromPage(titleToLink(keywords[i]), 1);
         if(image && image.length > 0) 
         {
-            images[j++] = image[0];
+        images[j++] = image[0];
         }
         if(j >= count) break;
     }
@@ -120,7 +123,7 @@ async function getImages(primary)
     return axios.get("https://www.don-hurst.com/keyword")
         .then(async related => 
             {
-                related = JSON.parse(related.data).keyword_list;
+                related = JSON.parse(related.data).keywords;
                 let images = {};
     
                 images.primary = await Promise.all(await getImagesFromPage(primary));
