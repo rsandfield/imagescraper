@@ -76,7 +76,15 @@ async function getImagesFromPage(link, count = Infinity)
                     let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
                     images[j++] = fetchHTML(imagePage)
                         .then($$ => {
-                            return getBase64("https:" + $$('#file')[0].children[0].attribs.href)
+                            let preview = $$('.mw-filepage-resolutioninfo').children('a');
+                            if(preview.length > 0)
+                            {
+                                return getBase64("https:" + preview[0].attribs.href);
+                            }
+                            else
+                            {
+                                return getBase64("https:" + $$('#file')[0].children[0].attribs.href)
+                            }
                         });
                     if(j >= count) break;
                 }
