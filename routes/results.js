@@ -2,9 +2,6 @@ var express = require('express');
 var cheerio = require('cheerio');
 var axios = require("axios");
 var router = express.Router();
-var FileReader = require("filereader");
-const { prev } = require('cheerio/lib/api/traversing');
-var reader = new FileReader();
 
 /**
  * Converts Wikipedia title to article link
@@ -28,6 +25,11 @@ function linkToTitle(link)
     return link.replace('_', ' ');
 }
 
+/**
+ * Fetches page as DOM loaded into Cheerio
+ * @param {string} url 
+ * @returns cheerio object loaded with page DOM
+ */
 async function fetchHTML(url) {
     try{
         let {data} = await axios.get(url);
@@ -39,8 +41,16 @@ async function fetchHTML(url) {
     }
 }
 
+/**
+ * Fetches up to all image content from a linked Wikipedia article, can be
+ * limited by providing a 'count' value for number of desired images
+ * @param {string} link 
+ * @param {number} count 
+ * @returns Promise to deliver all images
+ */
 async function getImagesFromPage(link, count = Infinity)
 {
+    // Get the DOM for the linked page
     return fetchHTML(link)
         .then($ => {
             // Get content block of page
@@ -72,20 +82,38 @@ async function getImagesFromPage(link, count = Infinity)
                     // Image is not an SVG
                     && node.attribs.href.substr(node.attribs.href.lastIndexOf(".") + 1).localeCompare("svg") != 0
                 )
-                { 
+                {
+                    // Extract dedicated image page linked from Wikipedia article
                     let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
-                    images[j++] = fetchHTML(imagePage)
-                        .then($$ => {
-                            let preview = $$('.mw-filepage-resolutioninfo').children('a');
-                            if(preview.length > 0)
-                            {
-                                return getBase64("https:" + preview[0].attribs.href);
-                            }
-                            else
-                            {
-                                return getBase64("https:" + $$('#file')[0].children[0].attribs.href)
-                            }
-                        });
+
+                    // Assign a Promise to an array of image data Promises
+                    images[j++] = fetchHTML(imagePage).then($$ => {
+                        // Get the title of the image
+                        let title = $$('title')[0].children[0].data;
+
+                        // Initialize image object with URL and title
+                        let image = {
+                            url: imagePage,
+                            title: title.substr(5, title.lastIndexOf(".") - 5),
+                        }
+
+                        // Check if the image is presented with a preview resolution
+                        let preview = $$('.mw-filepage-resolutioninfo').children('a');
+                        if(preview.length > 0)
+                        {
+                            // Get the image data for the reduced preview image
+                            image.base64 = getBase64("https:" + preview[0].attribs.href);
+                        }
+                        else
+                        {
+                            // Get the image data for the full size image
+                            image.base64 = getBase64("https:" + $$('#file')[0].children[0].attribs.href);
+                        }
+
+                        return image;
+                    });
+
+                    // Check if the image maximum has been reached
                     if(j >= count) break;
                 }
             }
@@ -94,6 +122,13 @@ async function getImagesFromPage(link, count = Infinity)
         });
 }
 
+/**
+ * Gets up to the given count (default 10) of images from Wikipedia pages
+ * derived from a list of keywords
+ * @param {string[]} keywords 
+ * @param {number} count 
+ * @returns Promise to deliver all images
+ */
 async function getKeywordImages(keywords, count = 10)
 {
     let images = [];
@@ -115,7 +150,13 @@ async function getKeywordImages(keywords, count = 10)
     return images;
 }
 
-async function getImages(primary)
+/**
+ * Gets all images from a primary Wikipedia article and a list of related
+ * articles
+ * @param {string} primaryURL URL of primary article
+ * @returns Object containing two arrays of images
+ */
+async function getImages(primaryURL)
 {
     return axios.get("https://www.don-hurst.com/keyword")
         .then(async related => 
@@ -123,19 +164,26 @@ async function getImages(primary)
                 related = JSON.parse(related.data).keywords;
                 let images = {};
     
-                images.primary = await Promise.all(await getImagesFromPage(primary));
+                images.primary = await Promise.all(await getImagesFromPage(primaryURL));
                 images.related = await Promise.all(await getKeywordImages(related));
+
+                await Promise.all(images.primary.map(async (image) => {
+                    image.base64 = await image.base64;
+                }));
+                await Promise.all(images.related.map(async (image) => {
+                    image.base64 = await image.base64;
+                }));
 
                 return images;
             });
 }
 
-/*
-Function: getBase64
--------------------
-https://stackoverflow.com/questions/41846669/download-an-image-using-axios-and-convert-it-to-base64
-
-*/
+/**
+ * Retrieves the binary data for an image at a given URL and converts it into base64
+ * https://stackoverflow.com/questions/41846669/download-an-image-using-axios-and-convert-it-to-base64
+ * @param {string} url URL of the image
+ * @returns base64 encoded image string
+ */
 function getBase64(url)
 {
     return axios
@@ -153,12 +201,10 @@ function getBase64(url)
         });
 }
 
-/*
-Route: apirequest
------------------
-Recieves a request to scrape images based off of a primary Wikipedia article,
-sends a request to Don's transformer for a list of related articles, scrapes
-all the articles for images, and sends a stringified JSON back as a response.
+/**
+* Recieves a request to scrape images based off of a primary Wikipedia article,
+* sends a request to Don's transformer for a list of related articles, scrapes
+* all the articles for images, and sends a stringified JSON back as a response.
 */
 router.get('/apirequest', async function(req, res) {
     let primary = req.query['primary'];
@@ -180,12 +226,10 @@ router.get('/apirequest', async function(req, res) {
     res.send(JSON.stringify(await getImages(primary)));
 });
 
-/*
-Route: results
---------------
-Recieves a request to scrape images based off of a primary Wikipedia article,
-sends a request to Don's transformer for a list of related articles, scrapes
-all the articles for images, and renders a gallery of all images.
+/**
+* Recieves a request to scrape images based off of a primary Wikipedia article,
+* sends a request to Don's transformer for a list of related articles, scrapes
+* all the articles for images, and renders a gallery of all images.
 */
 router.get('/results', async function(req, res) {
     //Set up the options object to be passed for rendering
