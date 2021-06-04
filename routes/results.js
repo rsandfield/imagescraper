@@ -42,6 +42,40 @@ async function fetchHTML(url) {
 }
 
 /**
+ * Gets image and metadata from a Wikimedia page
+ * @param {String} link URL of image media page
+ * @returns Object containing title, URL, and Promise to return base64 image
+ */
+async function getImageFromMediaPage(link)
+{
+    return fetchHTML(link).then($$ => {
+        // Get the title of the image
+        let title = $$('title')[0].children[0].data;
+
+        // Initialize image object with URL and title
+        let image = {
+            url: link,
+            title: title.substr(5, title.lastIndexOf(".") - 5),
+        }
+
+        // Check if the image is presented with a preview resolution
+        let preview = $$('.mw-filepage-resolutioninfo').children('a');
+        if(preview.length > 0)
+        {
+            // Get the image data for the reduced preview image
+            image.base64 = getBase64("https:" + preview[0].attribs.href);
+        }
+        else
+        {
+            // Get the image data for the full size image
+            image.base64 = getBase64("https:" + $$('#file')[0].children[0].attribs.href);
+        }
+
+        return image;
+    });
+}
+
+/**
  * Fetches up to all image content from a linked Wikipedia article, can be
  * limited by providing a 'count' value for number of desired images
  * @param {string} link 
@@ -51,75 +85,48 @@ async function fetchHTML(url) {
 async function getImagesFromPage(link, count = Infinity)
 {
     // Get the DOM for the linked page
-    return fetchHTML(link)
-        .then($ => {
-            // Get content block of page
-            let body = ($('#content')[0]);
-            // Get all link nodes from page
-            let linkNodes = $('a');
-            // Return array and index iterator
-            let images = [];
-            let j = 0;
-            //Iterate through all links
-            for(let i = 0; i < linkNodes.length; i++)
-            {
-                // Extract node object from cheeriojs function
-                let node = linkNodes[i];
-                
-                // Check that link node is a content image
-                if
-                ( 
-                    // Link node is within body
-                    $.contains(body, node)
-                    // Link node contains image node
-                    && node.attribs.class && node.attribs.class.localeCompare('image') == 0 
-                    // Parent node is of type only used for content
-                    && node.parent.attribs.class
-                    && (
-                        node.parent.attribs.class.localeCompare('thumbinner') == 0 ||
-                        node.parent.attribs.class.localeCompare('infobox-image') == 0
-                    )
-                    // Image is not an SVG
-                    && node.attribs.href.substr(node.attribs.href.lastIndexOf(".") + 1).localeCompare("svg") != 0
+    return fetchHTML(link).then($ => {
+        let body = ($('#content')[0]);  // Get content block of page
+        let linkNodes = $('a');         // Get all link nodes from page
+        let images = [];                // Return array and index iterator
+        let imageCount = 0;             // Image count iterator
+
+        //Iterate through all links
+        for(let i = 0; i < linkNodes.length; i++)
+        {
+            // Extract node object from cheeriojs function
+            let node = linkNodes[i];
+            
+            // Check that link node is a content image
+            let href = node.attribs.href;
+            if
+            ( 
+                // Link node is within body
+                $.contains(body, node)
+                // Link node contains image node
+                && node.attribs.class && node.attribs.class.localeCompare('image') == 0 
+                // Parent node is of type only used for content
+                && node.parent.attribs.class
+                && (
+                    node.parent.attribs.class.localeCompare('thumbinner') == 0 ||
+                    node.parent.attribs.class.localeCompare('infobox-image') == 0
                 )
-                {
-                    // Extract dedicated image page linked from Wikipedia article
-                    let imagePage = ('https://en.wikipedia.org' + node.attribs.href);
+                // Image is not an SVG
+                && href.substr(href.lastIndexOf(".") + 1).localeCompare("svg") != 0
+            )
+            {
+                // Assign a Promise to an array of image data Promises
+                images[imageCount++] = getImageFromMediaPage(
+                    'https://en.wikipedia.org' + node.attribs.href
+                );
 
-                    // Assign a Promise to an array of image data Promises
-                    images[j++] = fetchHTML(imagePage).then($$ => {
-                        // Get the title of the image
-                        let title = $$('title')[0].children[0].data;
-
-                        // Initialize image object with URL and title
-                        let image = {
-                            url: imagePage,
-                            title: title.substr(5, title.lastIndexOf(".") - 5),
-                        }
-
-                        // Check if the image is presented with a preview resolution
-                        let preview = $$('.mw-filepage-resolutioninfo').children('a');
-                        if(preview.length > 0)
-                        {
-                            // Get the image data for the reduced preview image
-                            image.base64 = getBase64("https:" + preview[0].attribs.href);
-                        }
-                        else
-                        {
-                            // Get the image data for the full size image
-                            image.base64 = getBase64("https:" + $$('#file')[0].children[0].attribs.href);
-                        }
-
-                        return image;
-                    });
-
-                    // Check if the image maximum has been reached
-                    if(j >= count) break;
-                }
+                // Check if the image maximum has been reached
+                if(imageCount >= count) break;
             }
+        }
 
-            return images;
-        });
+        return images;
+    });
 }
 
 /**
