@@ -12,4 +12,7 @@ Route: '/apirequest'
 
 Request: 'primary' variable with article title or URL as value
 
-Respnse: stringified JSON named 'response' containing arrays of base64 formatted images named 'primary' and 'related'
+Respnse: stringified JSON named 'response' containing arrays of objects with the following properties:
+  title: Title of image on Wikimedia
+  url: URL of Wikimedia page image was pulled from
+  base64: formatted images named 'primary' and 'related'
